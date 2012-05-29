@@ -160,9 +160,9 @@ if (T_PAD != 0) {
 			
 			if (DEBUGGING_OUTPUT) {
                 int kMatrixSize = kStateCount * kStateCount;
-				fprintf(stderr,"transitionMat index=%d brlen=%.5f\n", probabilityIndices[u], edgeLengths[u]);
+				fprintf(stderr,"transitionMat index=%d brlen=%.25f\n", probabilityIndices[u], edgeLengths[u]);
 				for ( int w = 0; w < (20 > kMatrixSize ? 20 : kMatrixSize); ++w)
-					fprintf(stderr,"transitionMat[%d] = %.5f\n", w, transitionMat[w]);
+					fprintf(stderr,"transitionMat[%d] = %.25f\n", w, transitionMat[w]);
 			}
 		}
         

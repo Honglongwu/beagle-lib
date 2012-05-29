@@ -11,7 +11,9 @@
 #include <iostream>
 
 #ifdef __GNUC__
-#include "cpuid.h"
+	#if !defined(DLS_MACOS)
+//		#include <cpuid.h>
+	#endif
 #endif
 
 namespace beagle {
@@ -83,27 +85,36 @@ bool check_sse2(){
 #endif
 
 #ifdef __GNUC__
+#if !defined(DLS_MACOS) // For non-Mac OS X GNU C
 bool check_sse2()
 {
-  unsigned int eax, ebx, ecx, edx;
-  unsigned int ext, sig;
-
-  ext = 0;
-  __get_cpuid_max( ext, &sig );
-  printf( "ext=0x%x sig=0x%x\n", ext, sig );
-
-  if (!__get_cpuid (1, &eax, &ebx, &ecx, &edx)) {
-    printf( "__get_cpuid returned 0\n" );
-    return 0;
-  }
-
-  /* Run SSE2 test only if host has SSE2 support.  */
-  if (edx & bit_SSE2)
+//  unsigned int eax, ebx, ecx, edx;
+//  unsigned int ext, sig;
+//
+//  ext = 0;
+//  __get_cpuid_max( ext, &sig );
+//  printf( "ext=0x%x sig=0x%x\n", ext, sig );
+//
+//  if (!__get_cpuid (1, &eax, &ebx, &ecx, &edx)) {
+//    printf( "__get_cpuid returned 0\n" );
+//    return 0;
+//  }
+//
+//  /* Run SSE2 test only if host has SSE2 support.  */
+//  if (edx & bit_SSE2)
 	return true;
-
-	return false;
+//
+//	return false;
 }
-
+#else // For Mac OS X GNU C
+bool check_sse2(){
+     int op = 0x00000001, eax, ebx, ecx, edx;
+      __asm__("cpuid"
+        : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
+        : "a" (op));
+	return edx & 0x04000000;  
+}
+#endif
 #endif
 
 
