@@ -10,9 +10,9 @@
 #include "libhmsbeagle/CPU/BeagleCPUSSEImpl.h"
 #include <iostream>
 
-#ifdef __GNUC__
+#ifdef HAVE_CPUID_H
 	#if !defined(DLS_MACOS)
-//		#include <cpuid.h>
+		#include <cpuid.h>
 	#endif
 #endif
 
@@ -88,23 +88,55 @@ bool check_sse2(){
 #if !defined(DLS_MACOS) // For non-Mac OS X GNU C
 bool check_sse2()
 {
-//  unsigned int eax, ebx, ecx, edx;
-//  unsigned int ext, sig;
-//
-//  ext = 0;
-//  __get_cpuid_max( ext, &sig );
+#ifdef HAVE_CPUID_H
+  unsigned int eax, ebx, ecx, edx;
+  unsigned int ext, sig;
+
+  ext = 0;
+  __get_cpuid_max( ext, &sig );
 //  printf( "ext=0x%x sig=0x%x\n", ext, sig );
-//
-//  if (!__get_cpuid (1, &eax, &ebx, &ecx, &edx)) {
+
+  if (!__get_cpuid (1, &eax, &ebx, &ecx, &edx)) {
 //    printf( "__get_cpuid returned 0\n" );
-//    return 0;
-//  }
-//
-//  /* Run SSE2 test only if host has SSE2 support.  */
-//  if (edx & bit_SSE2)
+    return false;
+  }
+
+  /* Run SSE2 test only if host has SSE2 support.  */
+  if (edx & bit_SSE2)
 	return true;
-//
-//	return false;
+  return false;
+#else // HAVE_CPUID.H
+	// Determine if cpuid supported:
+    unsigned int res;
+    __asm__("mov %%ecx, %%eax;"
+            "xor $200000, %%eax;"
+            "xor %%ecx, %%eax;"
+            "je no;"
+            "mov $1, %%eax;"
+            "jmp end;"
+            "no: mov $0, %%eax;"
+            "end:;"
+            : "=a" (res)
+            :
+            : "cc");
+    if (res == 0) {
+    	return false; // cpuid is not supported
+    }
+    // Determine if SSE2 supported, PIC compliant version
+    unsigned int opcode = 0x00000001;
+    unsigned int result[4];
+    __asm__("pushl %%ebx;"
+            "cpuid;"
+            "movl %%ebx, %1;"
+            "popl %%ebx;"
+            : "=a" (result[0]), // EAX register -> result[0]
+              "=r" (result[1]), // EBX register -> result[1]
+              "=c" (result[2]), // ECX register -> result[2]
+              "=d" (result[3])  // EDX register -> result[3]
+            : "0" (opcode)
+            : "cc");
+    return result[3] & 0x04000000;
+#endif // HAVE_CPUID.H
 }
 #else // For Mac OS X GNU C
 bool check_sse2(){
